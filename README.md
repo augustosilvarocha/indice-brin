@@ -1,3 +1,6 @@
+# Estudo sobre Índice BRIN
+Atividade de Programação e Administração de Banco de Dados — Este projeto demonstra o uso prático do índice BRIN em grandes bases de dados, comparando seu desempenho e consumo de espaço com o índice B-Tree no PostgreSQL.
+
 ## Sumário
 
 - [Objetivo](#objetivo)
@@ -10,9 +13,6 @@
 - [Conclusão](#conclusão)
 - [Quando usar Índice BRIN?](#quando-usar-índice-brin)
 - [Referências](#referências)
-
-# Estudo sobre Índice BRIN
-Atividade de Programação e Administração de Banco de Dados — Este projeto demonstra o uso prático do índice BRIN em grandes bases de dados, comparando seu desempenho e consumo de espaço com o índice B-Tree no PostgreSQL.
 
 ## Objetivo
 
@@ -119,8 +119,12 @@ WHERE data_hora_evento BETWEEN '2026-03-02 00:00:00' AND '2026-10-30 23:59:59';
 
 ### O resultado do `EXPLAIN ANALYZE`
 ![Resultado do EXPLAIN ANALYZE mostrando o tempo de execução](img/RESPOSTA-B-TREE-200MILHOES.png)
-🕒 Tempo de execução: entre 15 a 20 segundos.
 
+- Linhas verificadas: 20.995.199
+- Tempo total de execução: 15.771 ms
+- Vantagem: alta precisão.
+- Desvantagem: índice ocupa muito espaço.
+- Tempo total de execução: 15.771 ms
 
 ## Consulta com Índice BRIN
 
@@ -145,7 +149,14 @@ WHERE data_hora_evento BETWEEN '2026-03-02 00:00:00' AND '2026-10-30 23:59:59';
 
 ### O resultado do `EXPLAIN ANALYZE`
 ![Resultado do EXPLAIN ANALYZE mostrando o tempo de execução](img/RESPOSTA-BRIN-200MILHOES.png)
-🕒 Tempo de execução: entre 10 a 12 segundos.
+O PostgreSQL analisou blocos de dados usando os valores mínimos e máximos de cada faixa.
+
+- Blocos lidos (lossy): 161.536
+- Linhas retornadas: 20.995.199
+- Linhas descartadas após verificação: 4.481
+- Tempo total de execução: 10.231 ms
+- Vantagem: muito mais leve (índice ocupa ~400 KB).
+- Desvantagem: precisa checar manualmente os blocos (recheck).
 
 ## Análise Comparativa
 O resultado do `EXPLAIN ANALYZE` fornece dados importantes para comparar o desempenho dos índices BRIN e B-Tree em consultas sobre grandes volumes de dados.
