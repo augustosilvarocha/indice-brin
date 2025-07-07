@@ -1,5 +1,18 @@
+## Sumário
+
+- [Objetivo](#objetivo)
+- [Estrutura do Projeto](#estrutura-do-projeto)
+- [Entendendo o que são Índices e comparando B-Tree (padrão) com BRIN](#entendendo-o-que-são-índices-e-comparando-b-tree-padrão-com-brin)
+- [Demonstração Prática](#demonstração-prática)
+- [Consultas com EXPLAIN ANALYZE](#consultas-com-explain-analyze)
+- [Análise Comparativa](#análise-comparativa)
+- [Comparando o Armazenamento em Disco](#comparando-o-armazenamento-em-disco)
+- [Conclusão](#conclusão)
+- [Quando usar Índice BRIN?](#quando-usar-índice-brin)
+- [Referências](#referências)
+
 # Estudo sobre Índice BRIN
-Atividade de Programação e Administração de Banco de Dados — Análise prática do uso de índices BRIN em tabelas massivas de sensores IoT utilizando PostgreSQL.
+Atividade de Programação e Administração de Banco de Dados — Este projeto demonstra o uso prático do índice BRIN em grandes bases de dados, comparando seu desempenho e consumo de espaço com o índice B-Tree no PostgreSQL.
 
 ## Objetivo
 
@@ -75,8 +88,8 @@ SELECT
     END
 FROM generate_series(1, 200000000) AS s;
 ```
-Este script insere 20 milhões de registros simulados, alternando entre sensores de temperatura, umidade e pressão.
-Você pode ajustar a quantidade modificando o valor final em generate_series(1, 20000000).
+ **⚠️ Atenção:** Este script insere 200 milhões de registros simulados, o que pode levar um tempo considerável para ser executado.
+Se seu computador não tiver espaço ou capacidade suficiente, recomendamos diminuir a quantidade de dados gerados.
 
 ## Consultas com EXPLAIN ANALYZE
 
@@ -88,13 +101,13 @@ Você pode ajustar a quantidade modificando o valor final em generate_series(1, 
 Sem índice, o banco de dados realiza uma varredura sequencial, o que compromete o desempenho das consultas.  
 A criação de um índice B-Tree melhora consideravelmente a velocidade ao buscar por colunas indexadas, como `data_hora_evento`.
 
-### Criar e Medir Índice B-Tree
+## Criar e Medir Índice B-Tree
 ```sql
 CREATE INDEX idx_btree ON sensores (data_hora_evento);
 SELECT pg_size_pretty(pg_relation_size('idx_btree'));
 ```
 Após a criação do índice, o segundo comando retorna o espaço ocupado por ele no disco.
-Com 20 milhões de registros, o índice B-Tree gerado ocupou aproximadamente 4284 MB (ou 4,284 GB).
+Com 200 milhões de registros, o índice B-Tree gerado ocupou aproximadamente 4284 MB (ou 4,284 GB).
 
 ### Consulta com Índice B-Tree
 
@@ -103,14 +116,35 @@ EXPLAIN ANALYZE
 SELECT * FROM sensores
 WHERE data_hora_evento BETWEEN '2026-03-02 00:00:00' AND '2026-10-30 23:59:59';
 ```
+
+### O resultado do `EXPLAIN ANALYZE`
+![Resultado do EXPLAIN ANALYZE mostrando o tempo de execução](img/RESPOSTA-B-TREE-200MILHOES.png)
 🕒 Tempo de execução: entre 15 a 20 segundos.
 
-### Consulta com Índice BRIN
+
+## Consulta com Índice BRIN
+
+### Remover o índice B-Tree existente
+```sql
+DROP INDEX idx_btree;
+```
+### Criar e Medir Índice BRIN
+```sql
+CREATE INDEX idx_brin ON sensores USING BRIN (data_hora_evento);
+SELECT pg_size_pretty(pg_relation_size('idx_brin'));
+```
+Após a criação do índice, o segundo comando retorna o espaço ocupado por ele no disco.
+Com 200 milhões de registros, o índice BRIN gerado ocupou aproximadamente 416 kB.
+
+### Executar a consulta para análise de desempenho
 ```sql
 EXPLAIN ANALYZE
 SELECT * FROM sensores
 WHERE data_hora_evento BETWEEN '2026-03-02 00:00:00' AND '2026-10-30 23:59:59';
 ```
+
+### O resultado do `EXPLAIN ANALYZE`
+![Resultado do EXPLAIN ANALYZE mostrando o tempo de execução](img/RESPOSTA-BRIN-200MILHOES.png)
 🕒 Tempo de execução: entre 10 a 12 segundos.
 
 ## Análise Comparativa
@@ -148,8 +182,17 @@ O índice BRIN economiza significativamente mais espaço conforme a quantidade d
 - Proporciona um ganho significativo de espaço, reduzindo o tamanho do índice de centenas de MB para poucos KB.
 - Melhora consideravelmente o tempo de resposta em consultas por intervalo de dados.
 
-### Quando usar BRIN?
+### Quando usar Índice BRIN?
 
 - Quando os dados possuem ordem física natural (ex: por data ou ID sequencial)
 - Para consultas que filtram por intervalos grandes
 - Em situações que exigem economia de espaço no armazenamento de índices
+
+## Referências
+
+- Documentação oficial do PostgreSQL sobre Índices BRIN:  
+  [https://www.postgresql.org/docs/current/brin.html](https://www.postgresql.org/docs/current/brin.html)
+
+- Documentação oficial do PostgreSQL sobre Índices B-Tree:  
+  [https://www.postgresql.org/docs/current/btree.html](https://www.postgresql.org/docs/current/btree.html)
+
