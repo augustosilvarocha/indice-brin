@@ -1,5 +1,5 @@
-# Índice Brin
-Projeto acadêmico de Banco de Dados — Análise prática do uso de índices BRIN em tabelas massivas de sensores IoT utilizando PostgreSQL.
+# Estudo sobre Índice BRIN
+Atividade de Programação e Administração de Banco de Dados — Análise prática do uso de índices BRIN em tabelas massivas de sensores IoT utilizando PostgreSQL.
 
 ## Objetivo
 
@@ -18,6 +18,8 @@ Demonstrar, de forma prática e comparativa, o funcionamento do índice **BRIN (
 - Consultas com e sem índice, usando `EXPLAIN ANALYZE`
 - Prints das execuções para comparação de desempenho
 - Tabela com os tamanhos dos índices em diferentes volumes
+
+## Entendendo o que são Índices e comparando B-Tree (padrão) com BRIN.
 
 ### O que é um índice?
 
@@ -103,7 +105,7 @@ WHERE data_hora_evento BETWEEN '2026-03-02 00:00:00' AND '2026-10-30 23:59:59';
 ```
 🕒 Tempo de execução: entre 15 a 20 segundos.
 
-### Consulta com Índice Brin
+### Consulta com Índice BRIN
 ```sql
 EXPLAIN ANALYZE
 SELECT * FROM sensores
@@ -126,6 +128,19 @@ Para facilitar a compreensão, criei a tabela abaixo que resume a performance de
 Em algumas situações, consultas específicas podem se beneficiar mais do índice B-Tree, principalmente quando a precisão na leitura de dados é prioritária.  
 O índice BRIN, por sua vez, é uma estrutura leve que funciona muito bem para tabelas gigantes com dados ordenados fisicamente, sendo bastante usado em cenários como logs de sensores e dados temporais com inserção sequencial.
 
+## Comparando o Armazenamento em Disco
+
+A tabela abaixo mostra a diferença de espaço ocupado pelos índices B-Tree e BRIN em diferentes volumes de dados:
+
+| Total de Registros | Tamanho do Índice B-Tree | Tamanho do Índice BRIN | Diferença (aproximadamente) |
+|--------------------|---------------------------|--------------------------|------------------------------|
+| 10 milhões         | 214 MB                    | 40 KB                   | 5.486x menor                 |
+| 20 milhões         | 428 MB                    | 56 KB                   | 7.821x menor                 |
+| 80 milhões         | 1.714 MB                  | 176 KB                  | 9.738x menor                 |
+| 200 milhões        | 4.284 MB                  | 416 KB                  | 10.295x menor                |
+
+O índice BRIN economiza significativamente mais espaço conforme a quantidade de dados aumenta, ideal para grandes volumes com dados sequenciais.
+
 ## Conclusão
 
 - O índice **BRIN** não substitui o **B-Tree** em todos os casos, mas é excelente para tabelas muito grandes com colunas ordenadas.
@@ -138,4 +153,3 @@ O índice BRIN, por sua vez, é uma estrutura leve que funciona muito bem para t
 - Quando os dados possuem ordem física natural (ex: por data ou ID sequencial)
 - Para consultas que filtram por intervalos grandes
 - Em situações que exigem economia de espaço no armazenamento de índices
-
